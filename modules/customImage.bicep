@@ -4,14 +4,17 @@ param location string = resourceGroup().location
 @description('An array of additional regions to replicate images to')
 param additionalLocations array = []
 
-@description('A prefix to add to the start of all resource names. Note: A "unique" suffix will also be added')
-param prefix string = 'devboxcustom'
-
 @description('The name of the image to be created')
-param imageName string = 'vscode-devbox-custom-image'
+param imageName string
 
 @description('The name of the image publisher')
-param imagePublisher string = 'ContosoCorporation'
+param imagePublisher string 
+
+@description('The name of the Compute Gallery')
+param computeGalleryName string
+
+@description('A prefix to add to the start of all resource names. Note: A "unique" suffix will also be added')
+param prefix string = 'pocdevboxcustom'
 
 param installScript array = split(loadTextContent('../imageBuilderScripts/vscode-developer.ps1'), ['\r','\n'])
 
@@ -37,8 +40,6 @@ var tags = {
   'Demo-Name': 'DevBoxCustomImage'
 }
 
-
-
 resource aibIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
   name: take('${prefix}_${imagePublisher}',64)
   location: location
@@ -62,7 +63,7 @@ resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-10-01-prev
 }
 
 resource computeGallery 'Microsoft.Compute/galleries@2022-03-03' = {
-  name: take('${prefix}_${imagePublisher}',64)
+  name: computeGalleryName
   location: location
   properties: {}
   tags: tags

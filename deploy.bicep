@@ -7,7 +7,7 @@ param prefix string = 'devboxcustom'
 
 
 // Scripts
-var commonScript = split(loadTextContent('installScripts/vscode-developer.ps1'), ['\r','\n'])
+var installScript = split(loadTextContent('imageBuilderScripts/vscode-developer.ps1'), ['\r','\n'])
 
 module developerImage 'modules/main.bicep' = {
   name: 'vscode-devbox-custom-image'
@@ -20,8 +20,8 @@ module developerImage 'modules/main.bicep' = {
     customize: [
       {
         type: 'PowerShell'
-        name: 'Common Setup'
-        inline: commonScript
+        name: 'VSCode with Node Setup'
+        inline: installScript
       }
     ]
   }

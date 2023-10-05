@@ -5,22 +5,27 @@ param location string = resourceGroup().location
 param additionalLocations array = []
 
 @description('A prefix to add to the start of all resource names. Note: A "unique" suffix will also be added')
-param prefix string 
+param prefix string = 'devboxcustom'
 
 @description('The name of the image to be created')
-param imageName string
+param imageName string = 'vscode-devbox-custom-image'
 
 @description('The name of the image publisher')
-param imagePublisher string
+param imagePublisher string = 'ContosoCorporation'
 
-@description('Tags to be applied to all deployed resources')
-param tags object
-
+param installScript array = split(loadTextContent('../imageBuilderScripts/vscode-developer.ps1'), ['\r','\n'])
 
 @description('Tasks to install on the vm')
-param customize array
+param customize array = [
+  {
+    type: 'PowerShell'
+    name: 'VSCode with Node Setup'
+    inline: installScript
+  }
+]
 param guid string = newGuid()
 var uniqueName = take('${prefix}_${imageName}_${guid}',64)
+
 
 // Todo: make params
 var imageOffer = prefix
@@ -28,6 +33,11 @@ var imageSku = '1-0-0'
 var imageBuilderSku = 'Standard_D8ds_v4'
 var imageBuilderDiskSize = 256
 var runOutputName = '${imageName}_output'
+var tags = {
+  'Demo-Name': 'DevBoxCustomImage'
+}
+
+
 
 resource aibIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
   name: take('${prefix}_${imagePublisher}',64)

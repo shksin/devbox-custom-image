@@ -13,6 +13,12 @@ param imagePublisher string
 @description('The name of the Compute Gallery')
 param computeGalleryName string
 
+@description('The name of the Dev Center')
+param devCenterName string
+
+@description('Dev Center Managed Identity Name')
+param devCenterManagedIdName string
+
 @description('A prefix to add to the start of all resource names. Note: A "unique" suffix will also be added')
 param prefix string = 'pocdevboxcustom'
 
@@ -40,27 +46,14 @@ var tags = {
   'Demo-Name': 'DevBoxCustomImage'
 }
 
-resource aibIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
-  name: take('${prefix}_${imagePublisher}',64)
-  location: location
-  tags: tags
+resource devCenter 'Microsoft.DevCenter/devcenters@2022-11-11-preview' existing = {
+  name: devCenterName
 }
 
-// Todo: Make custom role not full contributor
-resource contributorRoleDefinition 'Microsoft.Authorization/roleDefinitions@2018-01-01-preview' existing = {
-  scope: subscription()
-  name: 'b24988ac-6180-42a0-ab88-20f7382dd24c'
+resource devCenterManagedId 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: devCenterManagedIdName
 }
 
-resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-10-01-preview' = {
-  scope: resourceGroup()
-  name: sys.guid(aibIdentity.id, contributorRoleDefinition.id)
-  properties: {
-    roleDefinitionId: contributorRoleDefinition.id
-    principalId: aibIdentity.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
 
 resource computeGallery 'Microsoft.Compute/galleries@2022-03-03' = {
   name: computeGalleryName
@@ -89,6 +82,15 @@ resource image 'images@2022-03-03' = {
   }
   tags: tags
 }
+}
+
+//Associate Compute Gallery Image with Dev Center
+resource devCenterGallery 'Microsoft.DevCenter/devcenters/galleries@2022-11-11-preview' = {
+  name: computeGallery.name
+  parent: devCenter
+  properties: {
+    galleryResourceId: computeGallery.id
+  }
 }
 
 resource imageTemplate 'Microsoft.VirtualMachineImages/imageTemplates@2022-02-14' = {
@@ -125,7 +127,7 @@ resource imageTemplate 'Microsoft.VirtualMachineImages/imageTemplates@2022-02-14
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${aibIdentity.id}': {}
+      '${devCenterManagedId.id}': {}
     }
   }
   tags: tags
@@ -144,12 +146,12 @@ resource imageTemplate_build 'Microsoft.Resources/deploymentScripts@2020-10-01' 
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${aibIdentity.id}': {}
+      '${devCenterManagedId.id}': {}
     }
   }
   dependsOn: [
     imageTemplate
-    roleAssignment
+    devCenterManagedId
   ]
   properties: {
     forceUpdateTag: guid

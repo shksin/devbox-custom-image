@@ -13,16 +13,16 @@ resource devCenter 'Microsoft.DevCenter/devcenters@2022-11-11-preview' existing 
   name: devCenterName
 }
 
-resource computeGallery 'Microsoft.DevCenter/devcenters/galleries@2022-11-11-preview' existing = {
+resource devCenterGallery 'Microsoft.DevCenter/devcenters/galleries@2022-11-11-preview' existing = {
   name: computeGalleryName
-  parent: devCenter  
 }
 
 resource galleryimage 'Microsoft.DevCenter/devcenters/galleries/images@2022-11-11-preview' existing = {
   name: imageName
-  parent: computeGallery
+  parent: devCenterGallery
 }
 
+//Create Dev Box Definition
 resource devboxdef 'Microsoft.DevCenter/devcenters/devboxdefinitions@2022-11-11-preview' = {
   name: imageName
   parent: devCenter

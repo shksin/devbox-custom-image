@@ -1,6 +1,7 @@
 param devCenterName string
 param location string = resourceGroup().location
 param projectTeamName string = 'frontend'
+param devCenterManagedIdName string
 
 @description('Provide the AzureAd UserId to assign project rbac for (get the current user with az ad signed-in-user show --query id)')
 param devboxProjectUser string = '' 
@@ -8,13 +9,39 @@ param devboxProjectUser string = ''
 @description('Provide the AzureAd UserId to assign project rbac for (get the current user with az ad signed-in-user show --query id)')
 param devboxProjectAdmin string = ''
 
+
+resource devCenterIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
+  name: devCenterManagedIdName
+  location: location
+}
+
+// Todo: Make custom role not full contributor
+resource contributorRoleDefinition 'Microsoft.Authorization/roleDefinitions@2018-01-01-preview' existing = {
+  scope: subscription()
+  name: 'b24988ac-6180-42a0-ab88-20f7382dd24c'
+}
+
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-10-01-preview' = {
+  scope: resourceGroup()
+  name: sys.guid(devCenterIdentity.id, contributorRoleDefinition.id)
+  properties: {
+    roleDefinitionId: contributorRoleDefinition.id
+    principalId: devCenterIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 resource devCenter 'Microsoft.DevCenter/devcenters@2022-11-11-preview' = {
   name: devCenterName
   location: location
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${devCenterIdentity.id}': {}
+    }
   }
 }
+
 
 resource project 'Microsoft.DevCenter/projects@2022-11-11-preview' = {
   name: projectTeamName
@@ -80,3 +107,4 @@ resource logs 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
 }
 
 output devcenterName string = devCenter.name
+output devcenterIdName string = devCenterIdentity.name

@@ -2,8 +2,8 @@ param devCenterName string
 param location string = resourceGroup().location
 param projectTeamName string = 'frontend'
 
-@description('Provide the AzureAd UserId to assign project rbac for (get the current user with az ad signed-in-user show --query id)')
-param devboxProjectUser string = '' 
+@description('Provide the AzureAd UserIds for DevCenter User in an array')
+param devboxProjectUsers array = []
 
 @description('Provide the AzureAd UserId to assign project rbac for (get the current user with az ad signed-in-user show --query id)')
 param devboxProjectAdmin string = ''
@@ -25,16 +25,15 @@ resource project 'Microsoft.DevCenter/projects@2022-11-11-preview' = {
 }
 
 var devCenterDevBoxUserRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '45d50f46-0b78-4001-a660-4198cbe8cd05')
-resource projectUserRbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = if(!empty(devboxProjectUser)) {
+resource projectUserRbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = [ for (devboxUser, i) in devboxProjectUsers: {
   scope: project
-  name: guid(project.id, devboxProjectUser, devCenterDevBoxUserRoleId)
+  name: guid(project.id, devboxUser, devCenterDevBoxUserRoleId)
   properties: {
     roleDefinitionId: devCenterDevBoxUserRoleId
     principalType: 'User'
-    principalId: devboxProjectUser
+    principalId: devboxUser
   }
-}
-output projectId string = project.id
+}]
 
 var devCenterDevBoxAdminRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '331c37c6-af14-46d9-b9f4-e1909e1b95a0')
 resource projectAdminRbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = if(!empty(devboxProjectAdmin)) {
@@ -79,4 +78,5 @@ resource logs 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   }
 }
 
+output projectId string = project.id
 output devcenterName string = devCenter.name

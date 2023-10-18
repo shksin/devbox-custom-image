@@ -22,7 +22,7 @@ param installScript array = split(loadTextContent('../imageBuilderScripts/vscode
 param customize array = [
   {
     type: 'PowerShell'
-    name: 'VSCode with Node Setup'
+    name: 'VSCode'
     inline: installScript
   }
 ]

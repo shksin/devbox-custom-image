@@ -180,8 +180,11 @@ You can connect to DevBox either using RDP client or using browser
 
  ![image](images/devbox.png)
 
+**Note:** If your custom image requires a restart, you might see the following message when you try to connect to connect to the DevBox for the first time.
+![image](images/devboxstarting.png)
 
-
+In that case, select the Dev Box you created and click on Restart option. Once the Dev Box is restarted, you should be able to connect to it.
+![image](images/devboxrestart.png)
     
 
 
